@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import sys
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from typer.testing import CliRunner
 
@@ -138,16 +138,11 @@ class TestDeleteYesFlag:
 
 class TestWhoami:
     def test_whoami_json(self):
-        import httpx
+        mock_user = MagicMock()
+        mock_user.model_dump.return_value = {"email": "test@example.com", "name": "Test User"}
 
-        mock_response = httpx.Response(
-            200,
-            json={"email": "test@example.com", "name": "Test User"},
-            request=httpx.Request("GET", "https://api.hyperspell.com/auth/me"),
-        )
-
-        with patch("hyperspell_cli.commands.auth.get_http_client") as mock_http:
-            mock_http.return_value.get.return_value = mock_response
+        with patch("hyperspell_cli.commands.auth.get_sdk_client") as mock_client:
+            mock_client.return_value.auth.me.return_value = mock_user
             result = runner.invoke(app, ["--json", "auth", "whoami"])
             assert result.exit_code == 0
             data = json.loads(result.output)

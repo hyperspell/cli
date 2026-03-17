@@ -8,10 +8,11 @@ from rich.console import Console
 
 from hyperspell_cli.config import (
     clear_config,
-    get_http_client,
+    get_sdk_client,
     load_config,
     resolve_base_url,
     save_config,
+    serialize,
 )
 from hyperspell_cli.lib.output import output_error, output_result, should_output_json
 from hyperspell_cli.lib.prompts import confirm_action, require_password, require_text
@@ -145,10 +146,8 @@ def whoami(ctx: typer.Context) -> None:
         with with_spinner(
             "Fetching user info...", "User info retrieved", "Failed to fetch user info", quiet=quiet
         ):
-            http = get_http_client()
-            resp = http.get("/auth/me")
-            resp.raise_for_status()
-            data = resp.json()
+            client = get_sdk_client()
+            data = serialize(client.auth.me())
     except typer.Exit:
         raise
     except Exception as exc:

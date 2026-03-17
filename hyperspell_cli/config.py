@@ -87,18 +87,6 @@ def get_sdk_client():
     return Hyperspell(**kwargs)
 
 
-def get_http_client():
-    """Return an httpx client with API key auth."""
-    import httpx
-
-    headers: Dict[str, str] = {"X-API-Key": resolve_api_key()}
-    user_id = resolve_user_id()
-    if user_id:
-        headers["X-As-User"] = user_id
-
-    return httpx.Client(base_url=resolve_base_url(), headers=headers, timeout=30)
-
-
 def serialize(obj: Any) -> Any:
     """Convert an SDK model (or list of models) to a JSON-serializable dict."""
     if isinstance(obj, list):
