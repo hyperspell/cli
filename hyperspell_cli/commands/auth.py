@@ -8,9 +8,11 @@ from rich.console import Console
 
 from hyperspell_cli.config import (
     clear_config,
+    get_sdk_client,
     load_config,
     resolve_base_url,
     save_config,
+    serialize,
 )
 from hyperspell_cli.lib.output import output_error, output_result, should_output_json
 from hyperspell_cli.lib.prompts import confirm_action, require_password, require_text
@@ -34,12 +36,8 @@ def _get_opts(ctx: typer.Context) -> Dict[str, Any]:
 @app.command()
 def login(
     ctx: typer.Context,
-    base_url: Optional[str] = typer.Option(
-        None, "--base-url", help="Hyperspell API base URL."
-    ),
-    user_id: Optional[str] = typer.Option(
-        None, "--user-id", help="User ID for X-As-User header."
-    ),
+    base_url: Optional[str] = typer.Option(None, "--base-url", help="Hyperspell API base URL."),
+    user_id: Optional[str] = typer.Option(None, "--user-id", help="User ID for X-As-User header."),
 ) -> None:
     """Log in to Hyperspell with an API key.
 
@@ -77,7 +75,7 @@ def login(
             if uid and uid.strip():
                 kwargs["default_headers"] = {"X-As-User": uid.strip()}
             client = Hyperspell(**kwargs)
-            me = client.auth.me()
+            client.auth.me()
     except typer.Exit:
         raise
     except Exception as exc:
@@ -138,12 +136,43 @@ def status(ctx: typer.Context) -> None:
 
 
 @app.command()
-def logout(ctx: typer.Context) -> None:
+def whoami(ctx: typer.Context) -> None:
+    """Show the currently authenticated user (calls /auth/me)."""
+    opts = _get_opts(ctx)
+    json_flag = opts.get("json", False)
+    quiet = opts.get("quiet", False)
+
+    try:
+        with with_spinner(
+            "Fetching user info...", "User info retrieved", "Failed to fetch user info", quiet=quiet
+        ):
+            client = get_sdk_client()
+            data = serialize(client.auth.me())
+    except typer.Exit:
+        raise
+    except Exception as exc:
+        output_error(f"Failed to fetch user info: {exc}", code="whoami_failed", json_flag=json_flag)
+
+    if should_output_json(json_flag):
+        output_result(data, json_flag=json_flag)
+        return
+
+    stdout.print()
+    for key, value in data.items():
+        stdout.print(f"  {key}: {value}")
+    stdout.print()
+
+
+@app.command()
+def logout(
+    ctx: typer.Context,
+    yes: bool = typer.Option(False, "--yes", "-y", help="Skip confirmation prompt."),
+) -> None:
     """Clear saved credentials from ~/.hyperspell/config.json."""
     opts = _get_opts(ctx)
     json_flag = opts.get("json", False)
 
-    confirm_action("Are you sure you want to log out?", json_flag=json_flag)
+    confirm_action("Are you sure you want to log out?", yes_flag=yes, json_flag=json_flag)
 
     clear_config()
     stderr.print("  Logged out. Config cleared.")

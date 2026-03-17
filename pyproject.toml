@@ -33,7 +33,6 @@ typer = ">=0.15"
 rich = "^13"
 questionary = "^2.1"
 hyperspell = ">=0.34"
-httpx = ">=0.23"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0"

@@ -27,9 +27,7 @@ def output_result(data: Any, *, json_flag: bool = False) -> None:
 def output_error(message: str, *, code: str = "unknown", json_flag: bool = False) -> NoReturn:
     """Print an error and exit 1."""
     if should_output_json(json_flag):
-        sys.stderr.write(
-            json.dumps({"error": {"message": message, "code": code}}, indent=2) + "\n"
-        )
+        sys.stderr.write(json.dumps({"error": {"message": message, "code": code}}, indent=2) + "\n")
     else:
         stderr.print(f"[red]Error:[/red] {message}")
     raise typer.Exit(code=1)
