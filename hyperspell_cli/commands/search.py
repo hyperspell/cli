@@ -4,9 +4,7 @@ from typing import Any, Dict
 
 import typer
 from rich.console import Console
-from rich.markdown import Markdown
-from rich.panel import Panel
-from rich.text import Text
+from rich.table import Table
 
 from hyperspell_cli.config import get_sdk_client, serialize
 from hyperspell_cli.lib.output import output_error, output_result, should_output_json
@@ -22,29 +20,35 @@ def _get_opts(ctx: typer.Context) -> Dict[str, Any]:
 
 def _render_results(results: Any) -> None:
     highlights = results.highlights if hasattr(results, "highlights") else []
+    total = getattr(results, "total", len(highlights))
+    query_id = getattr(results, "query_id", None)
+
     if not highlights:
         stderr.print("[yellow]No results found.[/yellow]")
         return
 
-    for i, h in enumerate(highlights, 1):
-        source = getattr(h, "source", "unknown")
+    meta_parts = [f"[bold]{total}[/bold] result(s)"]
+    if query_id:
+        meta_parts.append(f"[dim]query_id={query_id}[/dim]")
+    stdout.print("  ".join(meta_parts))
+
+    table = Table(show_header=True, header_style="bold cyan", expand=True)
+    table.add_column("Score", style="green", no_wrap=True, min_width=6)
+    table.add_column("Title", no_wrap=False, min_width=20)
+    table.add_column("Source", style="dim", no_wrap=True)
+    table.add_column("Summary", no_wrap=False)
+
+    for h in highlights:
         score = getattr(h, "score", None)
-        title_text = getattr(h, "title", "") or ""
+        title = getattr(h, "title", "") or ""
+        source = getattr(h, "source", "") or ""
         content = getattr(h, "text", "") or getattr(h, "content", "") or ""
-        url = getattr(h, "url", None)
+        summary = content[:100] + ("…" if len(content) > 100 else "")
 
-        title_parts = [f"[bold]#{i}[/bold]  {source}"]
-        if score is not None:
-            title_parts.append(f"[dim]score={score:.3f}[/dim]")
-        title = Text.from_markup("  ".join(title_parts))
+        score_str = f"{score:.3f}" if score is not None else "-"
+        table.add_row(score_str, title, source, summary)
 
-        snippet = content[:500] + ("..." if len(content) > 500 else "") if content else ""
-        body = Markdown(snippet) if snippet else Text.from_markup("[dim]no content[/dim]")
-
-        if title_text and not snippet:
-            body = Text(title_text)
-
-        stdout.print(Panel(body, title=title, subtitle=url, border_style="blue"))
+    stdout.print(table)
 
 
 def search(
@@ -68,7 +72,7 @@ def search(
 
     try:
         with with_spinner("Searching...", "Search complete", "Search failed", quiet=quiet):
-            results = client.memories.search(query=query, limit=limit)
+            results = client.memories.search(query=query, max_results=limit)
     except typer.Exit:
         raise
     except Exception as exc:
