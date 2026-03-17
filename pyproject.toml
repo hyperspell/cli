@@ -1,0 +1,56 @@
+[tool.poetry]
+name = "hyperspell-cli"
+version = "0.1.0"
+description = "The Hyperspell CLI for developers and AI agents."
+readme = "README.md"
+license = "MIT"
+authors = ["Hyperspell <hello@hyperspell.com>"]
+keywords = ["hyperspell", "cli", "search", "memory", "ai", "agents"]
+
+classifiers = [
+    "Intended Audience :: Developers",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Operating System :: OS Independent",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Typing :: Typed",
+]
+packages = [
+    { include = "hyperspell_cli" }
+]
+
+[tool.poetry.urls]
+Repository = "https://github.com/hyperspell/cli"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+typer = ">=0.15"
+rich = "^13"
+questionary = "^2.1"
+hyperspell = ">=0.34"
+httpx = ">=0.23"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.0"
+ruff = ">=0.11"
+
+[tool.poetry.scripts]
+hyperspell = "hyperspell_cli.main:app"
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
