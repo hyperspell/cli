@@ -8,6 +8,7 @@ from rich.table import Table
 
 from hyperspell_cli.config import get_sdk_client, serialize
 from hyperspell_cli.lib.output import output_error, output_result, should_output_json
+from hyperspell_cli.lib.prompts import confirm_action
 from hyperspell_cli.lib.spinner import with_spinner
 
 app = typer.Typer(
@@ -151,11 +152,14 @@ def delete(
     ctx: typer.Context,
     source: str = typer.Argument(..., help="Source name."),
     resource_id: str = typer.Argument(..., help="Resource ID."),
+    yes: bool = typer.Option(False, "--yes", "-y", help="Skip confirmation prompt."),
 ) -> None:
     """Delete a memory."""
     opts = _get_opts(ctx)
     json_flag = opts.get("json", False)
     quiet = opts.get("quiet", False)
+
+    confirm_action(f"Delete memory {source}/{resource_id}?", yes_flag=yes, json_flag=json_flag)
 
     client = get_sdk_client()
 
